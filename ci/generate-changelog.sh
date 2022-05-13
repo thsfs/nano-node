@@ -62,8 +62,10 @@ develop_head=$(git show-ref -s origin/develop)
 common_ancestor=$(git merge-base --octopus "${develop_head}" "${newest_previous_version}")
 
 echo "Setting the python environment and running the changelog.py script"
-apt-get install -y python3.8 python3-pip python3-venv
+apt-get install -y python3.8 python3-pip virtualenv python3-venv
 (
+    set -e
+
     virtualenv "${workspace}/venv" --python=python3.8
     source "${workspace}/venv/bin/activate"
     python -m pip install PyGithub mdutils
