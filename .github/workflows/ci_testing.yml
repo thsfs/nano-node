@@ -61,19 +61,16 @@ jobs:
       - name: Generating the CHANGELOG file
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/artifacts
-          pushd ${GITHUB_WORKSPACE}
-          ci/generate-changelog.sh . artifacts
-        env:
-          TAG: $TAG
-          PAT: ${{ secrets.GITHUB_TOKEN }}
-#      - name: Generating the CHANGELOG file
-#        run: |
-#          mkdir -p ${GITHUB_WORKSPACE}/artifacts
-#          docker run -e PAT=${{ secrets.GITHUB_TOKEN }} -e TAG=$TAG \
-#          -v ${GITHUB_WORKSPACE}:/workspace \
-#          -v ${GITHUB_WORKSPACE}/artifacts:/artifacts \
-#          nanocurrency/nano-env:gcc \
-#          /bin/bash -c "/workspace/ci/generate-changelog.sh /workspace /artifacts"
+      - name: Generating the CHANGELOG file
+        run: |
+          mkdir -p ${GITHUB_WORKSPACE}/source
+          mkdir -p ${GITHUB_WORKSPACE}/artifacts
+          docker run -e PAT=${{ secrets.GITHUB_TOKEN }} -e TAG=$TAG \
+          -v ${GITHUB_WORKSPACE}:/workspace \
+          -v ${GITHUB_WORKSPACE}/source:/source \
+          -v ${GITHUB_WORKSPACE}/artifacts:/artifacts \
+          nanocurrency/nano-env:gcc \
+          /bin/bash -c "/workspace/ci/generate-changelog.sh /source /artifacts thsfs/nano-node"
       - name: Create SSH key
         run: |
           install -m 600 -D /dev/null ~/.ssh/id_rsa
