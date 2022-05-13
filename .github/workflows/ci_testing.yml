@@ -63,6 +63,9 @@ jobs:
           mkdir -p ${GITHUB_WORKSPACE}/artifacts
           pushd ${GITHUB_WORKSPACE}
           ci/generate-changelog.sh . artifacts
+        env:
+          TAG: $TAG
+          PAT: ${{ secrets.GITHUB_TOKEN }}
 #      - name: Generating the CHANGELOG file
 #        run: |
 #          mkdir -p ${GITHUB_WORKSPACE}/artifacts
