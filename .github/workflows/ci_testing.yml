@@ -94,7 +94,7 @@ jobs:
           -v ${GITHUB_WORKSPACE}:/workspace \
           -v ${GITHUB_WORKSPACE}/artifacts:/artifacts \
           nanocurrency/nano-env:gcc \
-          /bin/bash -c "/workspace/ci/generate-changelog2.sh /artifacts thsfs/nano-node"
+          /bin/bash -c "/workspace/ci/generate-changelog2.sh /artifacts /workspace thsfs/nano-node"
       - name: Create SSH key
         run: |
           install -m 600 -D /dev/null ~/.ssh/id_rsa
