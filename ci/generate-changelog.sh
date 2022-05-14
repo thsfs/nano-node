@@ -73,7 +73,7 @@ apt-get install -y python3.8 python3-pip virtualenv python3-venv
     source "${workspace}/venv/bin/activate"
     python -m pip install PyGithub mdutils
     set +x
-    python "${workspace}/util/changelog.py" -p "${PAT}" -s "${common_ancestor}" -e "${TAG}" -r "${repository}"
+    python "${workspace}/util/changelog.py" -p "${PAT}" -s "${common_ancestor}" -e "${TAG}"
     set -x
 
     if [ ! -s CHANGELOG.md ]; then
