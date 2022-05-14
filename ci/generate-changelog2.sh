@@ -41,6 +41,11 @@ previous_version_major=$(( version_major - 1 ))
 
 echo "Getting the tag of the most recent previous version"
 pushd "$workspace"
+
+# Required to access git in the host machine
+git config --global --add safe.directory "$workspace"
+git fetch --tags
+
 version_tags=$(git tag | grep -E "^(V(${previous_version_major}).[0-9]+(.[0-9]+)?)$" | sort)
 for tag in $version_tags; do
     newest_previous_version=$tag
