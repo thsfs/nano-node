@@ -88,8 +88,6 @@ jobs:
           repository: ${{ github.event.inputs.repo }}
       - name: Generating the CHANGELOG file
         run: |
-          git config --global --add safe.directory {$GITHUB_WORKSPACE}
-          git fetch --tags
           mkdir -p ${GITHUB_WORKSPACE}/artifacts
           docker run -e PAT=${{ secrets.GITHUB_TOKEN }} -e TAG=$TAG \
           -v ${GITHUB_WORKSPACE}:/workspace \
