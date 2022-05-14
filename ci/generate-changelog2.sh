@@ -8,7 +8,8 @@ PAT=$(echo "${PAT}")
 set -x
 
 output_dir="${1:-$(pwd)}"
-repository="${2:-thsfs/nano-node}"
+workspace="${2:-$(pwd)}"
+repository="${3:-thsfs/nano-node}"
 
 # matches V1.0.0 and V1.0 formats
 version_re="^(V[0-9]+.[0-9]+(.[0-9]+)?)$"
@@ -39,6 +40,7 @@ read -r version_major version_minor version_revision <<< $( echo "${TAG}" | awk 
 previous_version_major=$(( version_major - 1 ))
 
 echo "Getting the tag of the most recent previous version"
+pushd "$workspace"
 version_tags=$(git tag | grep -E "^(V(${previous_version_major}).[0-9]+(.[0-9]+)?)$" | sort)
 for tag in $version_tags; do
     newest_previous_version=$tag
