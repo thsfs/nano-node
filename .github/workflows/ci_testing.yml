@@ -55,12 +55,8 @@ jobs:
           echo "TAG=${{ github.event.inputs.ref }}" >> $GITHUB_ENV
       - uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
         with:
-          submodules: "recursive"
           ref: ${{ github.event.inputs.ref }}
           repository: ${{ github.event.inputs.repo }}
-      - name: Generating the CHANGELOG file
-        run: |
-          mkdir -p ${GITHUB_WORKSPACE}/artifacts
       - name: Generating the CHANGELOG file
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/source
@@ -70,7 +66,7 @@ jobs:
           -v ${GITHUB_WORKSPACE}/source:/source \
           -v ${GITHUB_WORKSPACE}/artifacts:/artifacts \
           nanocurrency/nano-env:gcc \
-          /bin/bash -c "/workspace/ci/generate-changelog.sh /source /artifacts thsfs/nano-node"
+          /bin/bash -c "/workspace/ci/generate-changelog.sh /source /artifacts /workspace thsfs/nano-node"
       - name: Create SSH key
         run: |
           install -m 600 -D /dev/null ~/.ssh/id_rsa
