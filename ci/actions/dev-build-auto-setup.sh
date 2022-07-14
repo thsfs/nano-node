@@ -65,14 +65,15 @@ for tag in $version_tags; do
         break
     fi
 done
+popd
 
 if [[ -z "$last_tag" ]]; then
     echo "No tag found"
     exit 1
 fi
 
-develop_head=$(cat ".git/refs/heads/develop")
-tag_head=$(cat ".git/refs/tags/${last_tag}")
+develop_head=$(cat "${source_dir}/.git/refs/heads/develop")
+tag_head=$(cat "${source_dir}/.git/refs/tags/${last_tag}")
 
 if [[ "$develop_head" == "$tag_head" ]]; then
     echo "No new commits for the develop build, the develop branch head matches the latest DB tag head!"
