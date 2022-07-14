@@ -32,7 +32,7 @@ jobs:
           git fetch --tags
       - name: Generate the new tag
         run: |
-          source ci/actions/dev-build-tag-generator.sh
+          source ci/actions/dev-build-tag-gen.sh
           echo "TAG=$build_tag" >> $GITHUB_ENV
       - name: Push the new tag
         run: |
