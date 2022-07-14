@@ -45,7 +45,7 @@ jobs:
           git push origin "${TAG}"
 
   osx_job:
-    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.steps.tag_gen.conclusion == 'success' || github.event.inputs.ref != '' }}
+    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.steps.tag_gen.conclusion == 'success' && always() || github.event.inputs.ref != '' && always() }}
     needs: build_auto_setup_job
     runs-on: macOS-10.15
     timeout-minutes: 90
