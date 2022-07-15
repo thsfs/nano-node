@@ -78,7 +78,7 @@ if [[ -z "$last_tag" ]]; then
 fi
 
 pushd "$source_dir"
-develop_head=$(git rev-parse origin/develop)
+develop_head=$(git rev-parse "${git_upstream}/develop")
 tag_head=$(git rev-parse "$last_tag")
 popd
 
