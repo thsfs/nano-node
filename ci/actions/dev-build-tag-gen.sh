@@ -79,7 +79,7 @@ fi
 
 pushd "$source_dir"
 develop_head=$(git rev-parse "${git_upstream}/develop")
-tag_head=$(git rev-parse "$last_tag")
+tag_head=$(git rev-list "$last_tag" | head -n 1)
 popd
 
 if [[ "$develop_head" == "$tag_head" ]]; then
