@@ -73,7 +73,8 @@ if [[ -z "$last_tag" ]]; then
 fi
 
 pushd "$source_dir"
-develop_head=$(git show-ref --head origin/develop | head -1 | awk -F ' ' '{ print $1 }')
+#develop_head=$(git show-ref --head origin/develop | head -1 | awk -F ' ' '{ print $1 }')
+develop_head=$(cat ".git/refs/heads/develop")
 tag_head=$(git show-ref --head "$last_tag" | head -1 | awk -F ' ' '{ print $1 }')
 popd
 
