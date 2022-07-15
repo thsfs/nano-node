@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# This script checkes whether the develop branch contains new commits since the last develop build.
-# If so, it pushes a tag for the next DB build and exports the $build_tag variable.
-# Error exit codes: 1: invalid usage of the script. 2: no new change found since the last build.
+# This script gets the last DB tag for the next release version and checks whether the develop branch contains new
+# commits since the last develop build. If so, it sets and exports the variable $build_tag with the correct numbering
+# for the next DB build.
+# Error exit codes:
+# 0: success, the build tag was generated!
+# 1: branch error or invalid usage of the script.
+# 2: no new change found since the last build.
 
 source_dir="$(pwd)"
 git_upstream="origin"
@@ -42,7 +46,6 @@ while getopts 'hs:u:' OPT; do
     esac
 done
 
-set -o errexit
 set -o nounset
 set -o xtrace
 
@@ -69,7 +72,9 @@ popd
 
 if [[ -z "$last_tag" ]]; then
     echo "No tag found"
-    exit 1
+    export build_number=1
+    export build_tag="V${current_version_major}.${current_version_minor}DB${build_number}"
+    exit 0
 fi
 
 pushd "$source_dir"
