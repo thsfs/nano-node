@@ -45,7 +45,7 @@ jobs:
           git push origin "${TAG}"
 
   osx_job:
-    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.steps.tag_gen.conclusion == 'success' && always() || github.event.inputs.ref != '' && always() }}
+    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.result == 'success' && always() || github.event.inputs.ref != '' && always() }}
     needs: build_auto_setup_job
     runs-on: macOS-10.15
     timeout-minutes: 90
@@ -74,7 +74,7 @@ jobs:
           AWS_DEFAULT_REGION: us-east-2
 
   linux_job:
-    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.steps.tag_gen.conclusion == 'success' && always() || github.event.inputs.ref != '' && always() }}
+    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.result == 'success' && always() || github.event.inputs.ref != '' && always() }}
     needs: build_auto_setup_job
     runs-on: ubuntu-20.04
     timeout-minutes: 90
@@ -103,7 +103,7 @@ jobs:
           AWS_DEFAULT_REGION: us-east-2
 
   linux_docker_job:
-    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.steps.tag_gen.conclusion == 'success' && always() || github.event.inputs.ref != '' && always() }}
+    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.result == 'success' && always() || github.event.inputs.ref != '' && always() }}
     needs: build_auto_setup_job
     runs-on: ubuntu-20.04
     timeout-minutes: 90
@@ -138,7 +138,7 @@ jobs:
         run: ci/actions/linux/ghcr_push.sh
 
   windows_job:
-    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.steps.tag_gen.conclusion == 'success' && always() || github.event.inputs.ref != '' && always() }}
+    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.result == 'success' && always() || github.event.inputs.ref != '' && always() }}
     needs: build_auto_setup_job
     runs-on: windows-latest
     timeout-minutes: 90
