@@ -39,6 +39,8 @@ jobs:
           )
       - name: Push the new tag
         run: |
+          # Set the tag locally
+          TAG="${{ steps.tag_gen.outputs.build_tag }}"
           # Set git configuration
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
