@@ -1,12 +1,13 @@
 name: Beta
 on:
   schedule:
-    - cron: "0 0 * * 6"
+#    - cron: "0 0 * * 6"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
     inputs:
       repo:
         description: "repo"
-        default: "nanocurrency/nano-node"
+        default: "thsfs/nano-node"
         required: true
       ref:
         description: "tag to build"
@@ -26,7 +27,7 @@ jobs:
       - uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
         with:
           ref: "develop"
-          repository: "nanocurrency/nano-node"
+          repository: "thsfs/nano-node"
       - name: Fetch the repository tags
         run: |
           git fetch --tags
