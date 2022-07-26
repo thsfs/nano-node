@@ -35,7 +35,7 @@ jobs:
         run: |
           (
               source ci/actions/dev-build-tag-gen.sh
-              echo "::set-output name=build_tag::$build_tag
+              echo "::set-output name=build_tag::$build_tag"
           )
       - name: Push the new tag
         run: |
