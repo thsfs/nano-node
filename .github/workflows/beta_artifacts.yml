@@ -1,7 +1,5 @@
 name: Beta
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch:
     inputs:
       repo:
