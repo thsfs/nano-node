@@ -36,7 +36,7 @@ cmake \
 -DNANO_SHARED_BOOST=ON \
 -DQt5_DIR=${qt_dir} \
 -DCI_BUILD=true \
--DCI_VERSION_PRE_RELEASE="${ci_version_pre_release}"
+-DCI_VERSION_PRE_RELEASE="${ci_version_pre_release}" \
 ..
 
 if [[ "$OS" == 'Linux' ]]; then
