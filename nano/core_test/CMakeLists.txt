@@ -39,6 +39,7 @@ add_executable(
   signing.cpp
   socket.cpp
   ssl.cpp
+  ssl_node.cpp
   system.cpp
   telemetry.cpp
   toml.cpp
