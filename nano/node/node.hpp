@@ -154,6 +154,7 @@ public:
 	nano::gap_cache gap_cache;
 	nano::ledger ledger;
 	nano::signature_checker checker;
+	nano::keypair node_id;
 	nano::network network;
 	std::shared_ptr<nano::telemetry> telemetry;
 	nano::bootstrap_initiator bootstrap_initiator;
@@ -168,7 +169,6 @@ public:
 	nano::block_processor block_processor;
 	nano::block_arrival block_arrival;
 	nano::local_vote_history history;
-	nano::keypair node_id;
 	nano::block_uniquer block_uniquer;
 	nano::vote_uniquer vote_uniquer;
 	nano::confirmation_height_processor confirmation_height_processor;
