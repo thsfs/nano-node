@@ -27,6 +27,8 @@ jobs:
           submodules: "recursive"
       - name: Fetch Deps
         run: TEST=1 ci/actions/osx/install_deps.sh
+      - name: brew package discover
+        run: brew list openssl@1.1
       - name: Build Tests
         run: ci/build-ci.sh "/tmp/qt/lib/cmake/Qt5";
       - name: Run Tests lmdb
