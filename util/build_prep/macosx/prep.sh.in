@@ -124,7 +124,7 @@ echo "Next steps:"
 echo "    CC='${CC:-cc} ${wrap_compilers_add_options[*]}'"
 echo "    CXX='${CXX:-c++} ${wrap_compilers_add_options[*]}'"
 echo "    export CC CXX"
-echo "    cmake -DOPENSSL_ROOT_DIR=/opt/homebrew/Cellar/openssl@1.1 -DBOOST_ROOT=${boost_dir} -DNANO_GUI=ON -DQt5_DIR=${qt5_dir} <dir>"
+echo "    cmake -DOPENSSL_ROOT_DIR=/usr/local/Cellar/openssl@1.1 -DBOOST_ROOT=${boost_dir} -DNANO_GUI=ON -DQt5_DIR=${qt5_dir} <dir>"
 echo "    cpack -G \"DragNDrop\""
 
 exit 0
