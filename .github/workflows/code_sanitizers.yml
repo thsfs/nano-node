@@ -34,8 +34,8 @@ jobs:
       - name: Build Tests
         run: docker run -e TEST_USE_ROCKSDB -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c "cd /workspace && ${{ matrix.SANITIZER }}=1 ./ci/build-ci.sh /usr/lib/x86_64-linux-gnu/cmake/Qt5"
       - name: Run core_test
-        run: docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c "cd /workspace/build && ${XSAN}_OPTIONS=${XSAN_SUPPRESSIONS}log_exe_name=1:log_path=${XSAN}_report ./core_test"
+        run: docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c "cd /workspace/build && ${XSAN}_OPTIONS=${XSAN_SUPPRESSIONS}log_exe_name=1:log_path=sanitizer_report ./core_test"
       - name: Run rpc_test
-        run: docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c "cd /workspace/build && ${XSAN}_OPTIONS=${XSAN_SUPPRESSIONS}log_exe_name=1:log_path=${XSAN}_report ./rpc_test"
+        run: docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c "cd /workspace/build && ${XSAN}_OPTIONS=${XSAN_SUPPRESSIONS}log_exe_name=1:log_path=sanitizer_report ./rpc_test"
       - name: Show Test Reports
-        run: docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c "cd /workspace/build && cat ${XSAN}_report*"
+        run: docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c "cd /workspace/build && cat sanitizer_report*"
