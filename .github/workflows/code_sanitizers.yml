@@ -29,6 +29,12 @@ jobs:
           submodules: "true"
       - name: Git Submodule Update
         run: git submodule update --init --recursive
+      - name: XSan variable values
+        run: |
+          (
+            echo "XSAN: \'${XSAN}\'"
+            echo "XSAN_SUPPRESSIONS: \'${XSAN_SUPPRESSIONS}\'"
+          )
       - name: Install Dependencies
         run: ci/actions/linux/install_deps.sh
       - name: Build Tests
