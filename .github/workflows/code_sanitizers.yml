@@ -8,7 +8,7 @@ env:
 
 jobs:  
   google_sanitizers_linux:
-    name: Google Sanitizers on Unit Tests [TEST_USE_ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} - COMPILER=${{ matrix.COMPILER }}]
+    name: ${{ matrix.SANITIZER }} on Unit Tests [${{ matrix.COMPILER }} / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }}]
     timeout-minutes: 90
     strategy:
       fail-fast: false
