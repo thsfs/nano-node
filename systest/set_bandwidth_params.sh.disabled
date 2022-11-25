@@ -7,6 +7,7 @@
 # through CI and so that CI problems do not go unnoticed.
 
 set -e
+set -x
 
 DATADIR=data.systest
 
