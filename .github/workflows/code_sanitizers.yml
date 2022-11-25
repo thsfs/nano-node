@@ -1,6 +1,6 @@
 name: Code Sanitizers
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 env:
   RELEASE: 0
@@ -68,7 +68,7 @@ jobs:
               echo "Report Output:"
               for report in ${reports}; do
                 echo "File: $report"
-                docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c "cat $report"
+                docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c "cat /workspace/${report}"
                 echo
               done
             else
@@ -76,5 +76,4 @@ jobs:
             fi
           ) || exit 0
       - name: All tests succeeded
-        if: ${{ steps.core_test.outputs.success && steps.rpc_test.outputs.success }}
-        run: echo "End of the workflow."
+        run: test ${{ steps.core_test.outputs.success }} = true && test ${{ steps.rpc_test.outputs.success }} = true
