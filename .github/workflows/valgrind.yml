@@ -38,13 +38,16 @@ jobs:
         run: ci/actions/linux/install_deps.sh
       - name: Build Tests
         id: build_tests
-        run: docker run -e TEST_USE_ROCKSDB -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
+        run: docker run --user "$(id -u):$(id -g)" -e TEST_USE_ROCKSDB -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
           "cd /workspace && RELEASE=true ./ci/build-ci.sh /usr/lib/x86_64-linux-gnu/cmake/Qt5 'core_test rpc_test'"
-      - name: Upload Build Directory
+      - name: Upload the Test Artifacts
         uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
         with:
           name: built_workspace_rocksdb_${{ matrix.TEST_USE_ROCKSDB }}_${{ matrix.COMPILER }}_ref_${{ steps.set_ref.outputs.ref }}
-          path: ${{ github.workspace }}
+          path: |
+            ${{ github.workspace }}/build/core_test
+            ${{ github.workspace }}/build/rpc_test
+            ${{ github.workspace }}/valgrind.supp
           retention-days: 7
 
   valgrind_run:
@@ -63,30 +66,37 @@ jobs:
       - name: Set the Reference Variable
         id: set_ref
         run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
+      - name: Download the Test Artifacts
+        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
         with:
           name: built_workspace_rocksdb_${{ matrix.TEST_USE_ROCKSDB }}_${{ matrix.COMPILER }}_ref_${{ steps.set_ref.outputs.ref }}
-          path: ${{ github.workspace }}
+          path: |
+            ${{ github.workspace }}/build/${{ matrix.TEST_TO_RUN }}
+            ${{ github.workspace }}/valgrind.supp
       - name: Run ${{ matrix.TEST_TO_RUN }}
         id: test_run
         continue-on-error: true
         run: |
-          docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
-            "cd /workspace/build && valgrind --leak-check=full --track-origins=yes --suppressions=../valgrind.supp --error-exitcode=1 --log-file=${{ matrix.TEST_TO_RUN }}_report ./core_test"
+          docker run --user "$(id -u):$(id -g)" -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
+            "cd /workspace/build && valgrind --leak-check=full --track-origins=yes --suppressions=../valgrind.supp --error-exitcode=1 --log-file=${{ matrix.TEST_TO_RUN }}_report ./${{ matrix.TEST_TO_RUN }}"
           echo "issue_reported=$?" >> $GITHUB_OUTPUT
       - name: Test Report
         id: show_report
         run: |
           (
-            reports=$(ls build/*_report)
-            if [[ -n "${reports}" ]]; then
+            report_file="build/${{ matrix.TEST_TO_RUN }}_report"
+            if [[ -f "${report_file}" ]]; then
               echo "Report Output:"
-              for report in ${reports}; do
-                echo "File: $report"
-                docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c "cat /workspace/${report}"
-                echo
-              done
+              cat ${report_file}
+              echo
             else
               echo "No report has been generated."
             fi
           ) || exit 0
+      - name: Upload the Test Report
+        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
+        with:
+          name: valgrind_test_report_rocksdb_${{ matrix.TEST_USE_ROCKSDB }}_${{ matrix.COMPILER }}_ref_${{ steps.set_ref.outputs.ref }}
+          path: |
+            ${{ github.workspace }}/build/${{ matrix.TEST_TO_RUN }}_report
+          retention-days: 30
