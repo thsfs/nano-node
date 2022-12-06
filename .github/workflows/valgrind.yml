@@ -38,8 +38,10 @@ jobs:
         run: ci/actions/linux/install_deps.sh
       - name: Build Tests
         id: build_tests
-        run: docker run --user "$(id -u):$(id -g)" -e TEST_USE_ROCKSDB -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
-          "cd /workspace && RELEASE=true ./ci/build-ci.sh /usr/lib/x86_64-linux-gnu/cmake/Qt5 'core_test rpc_test'"
+        run: |
+          docker run -e TEST_USE_ROCKSDB -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
+            "cd /workspace && RELEASE=true ./ci/build-ci.sh /usr/lib/x86_64-linux-gnu/cmake/Qt5 'core_test rpc_test'"
+          sudo chown -R "$(id -u):$(id -g)" ${PWD}/build
       - name: Upload the Test Artifacts
         uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
         with:
@@ -48,7 +50,7 @@ jobs:
             ${{ github.workspace }}/build/core_test
             ${{ github.workspace }}/build/rpc_test
             ${{ github.workspace }}/valgrind.supp
-          retention-days: 7
+          retention-days: 2
 
   valgrind_run:
     name: ${{ matrix.TEST_TO_RUN }} / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
@@ -77,9 +79,10 @@ jobs:
         id: test_run
         continue-on-error: true
         run: |
-          docker run --user "$(id -u):$(id -g)" -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
+          docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
             "cd /workspace/build && valgrind --leak-check=full --track-origins=yes --suppressions=../valgrind.supp --error-exitcode=1 --log-file=${{ matrix.TEST_TO_RUN }}_report ./${{ matrix.TEST_TO_RUN }}"
           echo "issue_reported=$?" >> $GITHUB_OUTPUT
+          sudo chown -R "$(id -u):$(id -g)" ${PWD}/build
       - name: Test Report
         id: show_report
         run: |
