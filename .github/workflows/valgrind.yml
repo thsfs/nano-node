@@ -76,9 +76,6 @@ jobs:
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
         with:
           name: built_workspace_rocksdb_${{ matrix.TEST_USE_ROCKSDB }}_${{ matrix.COMPILER }}_ref_${{ steps.set_ref.outputs.ref }}
-          path: |
-            ${{ github.workspace }}/build/${{ matrix.TEST_TO_RUN }}
-            ${{ github.workspace }}/valgrind.supp
       - name: Run ${{ matrix.TEST_TO_RUN }}
         id: test_run
         continue-on-error: true
@@ -87,6 +84,7 @@ jobs:
           find .
           echo "printing github.workspace"
           find ${{ github.workspace }}
+          sudo chmod +x ${PWD}/build/${{ matrix.TEST_TO_RUN }}
           docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
             "cd /workspace/build && valgrind --leak-check=full --track-origins=yes --suppressions=../valgrind.supp --error-exitcode=1 --log-file=${{ matrix.TEST_TO_RUN }}_report ./${{ matrix.TEST_TO_RUN }}"
           echo "issue_reported=$?" >> $GITHUB_OUTPUT
