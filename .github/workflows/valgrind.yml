@@ -42,6 +42,10 @@ jobs:
           docker run -e TEST_USE_ROCKSDB -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
             "cd /workspace && RELEASE=true ./ci/build-ci.sh /usr/lib/x86_64-linux-gnu/cmake/Qt5 'core_test rpc_test'"
           sudo chown -R "$(id -u):$(id -g)" ${PWD}/build
+          echo "printing current path"
+          find .
+          echo "printing github.workspace"
+          find ${{ github.workspace }}
       - name: Upload the Test Artifacts
         uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
         with:
@@ -79,6 +83,10 @@ jobs:
         id: test_run
         continue-on-error: true
         run: |
+          echo "printing current path"
+          find .
+          echo "printing github.workspace"
+          find ${{ github.workspace }}
           docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
             "cd /workspace/build && valgrind --leak-check=full --track-origins=yes --suppressions=../valgrind.supp --error-exitcode=1 --log-file=${{ matrix.TEST_TO_RUN }}_report ./${{ matrix.TEST_TO_RUN }}"
           echo "issue_reported=$?" >> $GITHUB_OUTPUT
