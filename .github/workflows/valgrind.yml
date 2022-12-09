@@ -68,6 +68,8 @@ jobs:
       - name: Set the Reference Variable
         id: set_ref
         run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: Install Dependencies
+        run: ci/actions/linux/install_deps.sh
       - name: Download the Test Artifacts
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
         with:
