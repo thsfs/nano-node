@@ -65,6 +65,9 @@ jobs:
     outputs:
       issue_reported: ${{ steps.test_run.outputs.issue_reported }}
     steps:
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3.1.0
+        with:
+          submodules: "true"
       - name: Set the Reference Variable
         id: set_ref
         run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
