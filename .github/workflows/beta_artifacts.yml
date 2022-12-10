@@ -1,7 +1,8 @@
 name: Beta
 on:
   schedule:
-    - cron: "0 0 * * 3,6"
+    - cron: "*/10 * * * *"
+#    - cron: "0 0 * * 3,6"
   workflow_dispatch:
     inputs:
       repo:
@@ -36,8 +37,8 @@ jobs:
         run: |
           (
               source ci/actions/dev-build-tag-gen.sh
-              echo "::set-output name=build_tag::$build_tag"
-              echo "::set-output name=build_number::$build_number"
+              echo "build_tag=${build_tag}" >> $GITHUB_OUTPUT
+              echo "build_number=${build_number}" >> $GITHUB_OUTPUT
           )
       - name: Push the new tag
         run: |
