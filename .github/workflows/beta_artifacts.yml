@@ -36,6 +36,7 @@ jobs:
         id: tag_gen
         run: |
           (
+              set +e
               source ci/actions/dev-build-tag-gen.sh
               echo "build_tag=${build_tag}" >> $GITHUB_OUTPUT
               echo "build_number=${build_number}" >> $GITHUB_OUTPUT
