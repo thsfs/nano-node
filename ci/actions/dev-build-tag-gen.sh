@@ -10,6 +10,8 @@
 # 1: branch error or invalid usage of the script.
 # 2: no new change found since the last build.
 
+set +o errexit
+
 source_dir="$(pwd)"
 git_upstream="origin"
 previous_release_gen=false
