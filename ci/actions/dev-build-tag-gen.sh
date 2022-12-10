@@ -97,11 +97,11 @@ version_tags=""
 previous_release_major=0
 previous_release_minor=0
 if [[ $previous_release_gen == false ]]; then
-    version_tags=$(git tag | sort -V -r | grep -E "^(V(${current_version_major}).(${current_version_minor})(DB[0-9]+))$")
+    version_tags=$(git tag | sort -V -r | grep -E "^(V(${current_version_major}).(${current_version_minor})(DB[0-9]+))$" || true)
     last_tag=$(get_first_item "$version_tags")
 else
     previous_release_major=$(( current_version_major - 1 ))
-    version_tags=$(git tag | sort -V -r | grep -E "^(V(${previous_release_major}).([0-9]+)(DB[0-9]+)?)$")
+    version_tags=$(git tag | sort -V -r | grep -E "^(V(${previous_release_major}).([0-9]+)(DB[0-9]+)?)$" || true)
     last_tag=$(get_first_item "$version_tags")
     previous_release_minor=$(echo "$last_tag" | grep -oP "\.([0-9]+)" | grep -oP "[0-9]+")
 fi
