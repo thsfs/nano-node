@@ -22,8 +22,8 @@ jobs:
     if: ${{ github.event.inputs.ref == '' }}
     runs-on: ubuntu-20.04
     outputs:
-      build_tag: ${{ steps.tag_gen.outputs.build_tag }}
-      build_number: ${{ steps.tag_gen.outputs.build_number }}
+      build_tag: ${{ env.build_tag }}
+      build_number: ${{ env.build_number }}
     steps:
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3.1.0
         with:
@@ -38,13 +38,13 @@ jobs:
           (
               set +e
               source ci/actions/dev-build-tag-gen.sh
-              echo "build_tag=${build_tag}" >> $GITHUB_OUTPUT
-              echo "build_number=${build_number}" >> $GITHUB_OUTPUT
+              echo "build_tag=${build_tag}" >> $GITHUB_ENV
+              echo "build_number=${build_number}" >> $GITHUB_ENV
           )
       - name: Push the new tag
         run: |
           # Set the tag locally
-          TAG="${{ steps.tag_gen.outputs.build_tag }}"
+          TAG="${{ env.build_tag }}"
           # Set git configuration
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
