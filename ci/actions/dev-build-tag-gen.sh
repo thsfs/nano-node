@@ -114,7 +114,7 @@ if [[ -z "$last_tag" ]]; then
     else
         export build_tag="V${previous_release_major}.${previous_release_minor}DB${build_number}"
     fi
-    exit 0
+    return
 fi
 
 pushd "$source_dir"
