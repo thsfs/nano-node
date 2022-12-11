@@ -114,31 +114,30 @@ if [[ -z "$last_tag" ]]; then
     else
         export build_tag="V${previous_release_major}.${previous_release_minor}DB${build_number}"
     fi
-    return
-fi
-
-pushd "$source_dir"
-develop_head=""
-if [[ $previous_release_gen == false ]]; then
-    develop_head=$(git rev-parse "${git_upstream}/develop")
 else
-    export release_branch="releases/v${previous_release_major}"
-    develop_head=$(git rev-parse "${git_upstream}/${release_branch}")
-fi
-tag_head=$(git rev-list "$last_tag" | head -n 1)
-popd
+    pushd "$source_dir"
+    develop_head=""
+    if [[ $previous_release_gen == false ]]; then
+        develop_head=$(git rev-parse "${git_upstream}/develop")
+    else
+        export release_branch="releases/v${previous_release_major}"
+        develop_head=$(git rev-parse "${git_upstream}/${release_branch}")
+    fi
+    tag_head=$(git rev-list "$last_tag" | head -n 1)
+    popd
 
-if [[ "$develop_head" == "$tag_head" ]]; then
-    echo "No new commits for the develop build, the develop (or release) branch head matches the latest DB tag head!"
-    exit 2
-fi
+    if [[ "$develop_head" == "$tag_head" ]]; then
+        echo "No new commits for the develop build, the develop (or release) branch head matches the latest DB tag head!"
+        exit 2
+    fi
 
-latest_build_number=$(echo "$last_tag" | grep -oP "(DB[0-9]+)" | grep -oP "[0-9]+")
-export build_number=$(( latest_build_number + 1 ))
-if [[ $previous_release_gen == false ]]; then
-    export build_tag="V${current_version_major}.${current_version_minor}DB${build_number}"
-else
-    export build_tag="V${previous_release_major}.${previous_release_minor}DB${build_number}"
+    latest_build_number=$(echo "$last_tag" | grep -oP "(DB[0-9]+)" | grep -oP "[0-9]+")
+    export build_number=$(( latest_build_number + 1 ))
+    if [[ $previous_release_gen == false ]]; then
+        export build_tag="V${current_version_major}.${current_version_minor}DB${build_number}"
+    else
+        export build_tag="V${previous_release_major}.${previous_release_minor}DB${build_number}"
+    fi
 fi
 
 set +o nounset
