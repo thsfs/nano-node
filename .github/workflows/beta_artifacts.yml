@@ -35,11 +35,10 @@ jobs:
       - name: Generate the new tag
         id: tag_gen
         run: |
-          (
-              source ci/actions/dev-build-tag-gen.sh
-              echo "build_tag=${build_tag}" >> $GITHUB_OUTPUT
-              echo "build_number=${build_number}" >> $GITHUB_OUTPUT
-          )
+          output_var_file="variable_list.txt"
+          ci/actions/dev-build-tag-gen.sh -o "${output_var_file}"
+          cat "${output_var_file}"
+          cat "${output_var_file}" >> $GITHUB_OUTPUT
       - name: Push the new tag
         run: |
           # Set the tag locally
