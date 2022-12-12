@@ -38,6 +38,7 @@ beta = re.compile(r"^(V(\d)+.(\d)+((RC(\d)+)|(DB(\d)+))?)$")
 
 try:
     from github import Github, UnknownObjectException
+    from github.Label import Label
     from mdutils import MdUtils
 except BaseException:
     sys.exit("Error: run 'pip install PyGithub mdutils'")
@@ -227,6 +228,7 @@ class GenerateTree:
 
         self.commits = {}
         self.other_commits = []
+        self.excluded = []
         commits = self.repo.get_commits(sha=self.end)
 
         # Check if the common ancestor exists in the commit list.
@@ -258,16 +260,41 @@ class GenerateTree:
                     self.other_commits.append((commit.sha, m))
                     continue
 
+            if pull.state == 'open':
+                if args.verbose:
+                    print(f"info: commit is in tree but only associated with open PR {pr_number}: \"{pull.title}\"")
+                self.other_commits.append((commit.sha, m))
+                continue
+
+            if self.excluded_from_changelog(pull.labels):
+                if args.verbose:
+                    print(f"info: the PR {pr_number}: \"{pull.title}\" was excluded from the changelog")
+                self.excluded.append((commit.sha, m))
+                continue
+
             labels = []
             for label in pull.labels:
                 labels.append(label.name)
+
             self.commits[pull.number] = {
                 "Title": pull.title,
                 "Url": pull.html_url,
                 "labels": labels
             }
 
+    @staticmethod
+    def excluded_from_changelog(labels: list[Label]) -> bool:
+        for label in labels:
+            if label.name == 'exclude from changelog':
+                return True
+        return False
+
     def get_common_ancestor(self) -> str:
+        if not self.previous_branch:
+            print(f"argument required: the target end or tag doesn't have a {self.args.mode} ancestor in the same"
+                  "major version, the argument --previous-branch is required to find the ancestor")
+            exit(1)
+
         print("info: will look for the common ancestor by local git repo")
         cmd = f'''
         repo_path=/tmp/$(uuid)
