@@ -3,6 +3,7 @@ import copy
 import sys
 import re
 from typing import Tuple
+import subprocess
 
 """
 Changelog generation script, requires PAT with public_repo access, 
@@ -14,14 +15,20 @@ Generate Changelogs between tags or commits
 
 optional arguments:
   -h, --help            Show this help message and exit
-  -e END, --end END     Ending reference for Changelog(newest)
   -m {final,beta}, --mode {final,beta}
                         Mode to run changelog for [final, beta]
   -p PAT, --pat PAT     Personal Access Token
   -r REPO, --repo REPO  <org/repo> to generate logs for
+  -e END, --end END     Ending reference for Changelog(newest)
   -s START, --start START
                         Starting reference for Changelog(oldest)
-  -t TAG, --tag TAG     Tag to use for changelog generation
+  -t TAG, --tag TAG
+                        Tag to use for changelog generation
+  --start-tag START_TAG 
+                        Tag to use as start reference (instead of -s)
+  --previous-branch PREVIOUS_BRANCH
+                        Branch name of the previous version
+                        Reference: --tag or --end
   -v, --verbose         Verbose mode
 """
 
@@ -141,6 +148,19 @@ class CliArgs:
             type=str, action="store"
         )
         parse.add_argument(
+            '--start-tag',
+            dest='start_tag',
+            help="Tag for start reference",
+            type=str, action="store"
+        )
+        parse.add_argument(
+            '--previous-branch',
+            dest='previous_branch',
+            help='Branch name of the previous version',
+            type=str, action='store',
+            required=True
+        )
+        parse.add_argument(
             '-v', '--verbose',
             help="Verbose mode",
             action="store_true"
@@ -153,6 +173,18 @@ class CliArgs:
         self.start = options.start
         self.tag = options.tag
         self.verbose = options.verbose
+        self.previous_branch = options.previous_branch
+        self.start_tag = options.start_tag
+
+
+def validate_sha(hash_value: str) -> bool:
+    if len(hash_value) != 40:
+        return False
+    try:
+        sha_int = int(hash_value, 16)
+    except ValueError:
+        return False
+    return True
 
 
 class GenerateTree:
@@ -161,6 +193,7 @@ class GenerateTree:
         self.name = args.repo
         self.repo = github.get_repo(self.name)
         self.args = args
+        self.previous_branch = args.previous_branch
         if args.tag:
             self.tag = args.tag
             self.end = self.repo.get_commit(args.tag).sha
@@ -168,6 +201,9 @@ class GenerateTree:
                 print("error: set either --end or --tag")
                 exit(1)
         if args.end:
+            if not validate_sha(args.end):
+                print("error: --end argument is not a valid hash")
+                exit(1)
             self.end = self.repo.get_commit(args.end).sha
             if not args.start:
                 print("error: --end argument requires --start")
@@ -175,9 +211,16 @@ class GenerateTree:
         if not args.end and not args.tag:
             print("error: need either --end or --tag")
             exit(1)
-
+        if args.start and args.start_tag:
+            print("error: set either --start or --start-tag")
+            exit(1)
         if args.start:
+            if not validate_sha(args.start):
+                print("error: --start argument is not a valid hash")
+                exit(1)
             self.start = self.repo.get_commit(args.start).sha
+        elif args.start_tag:
+            self.start = self.select_start_ref(args.start_tag)
         else:
             assert args.tag
             self.start = self.get_common_by_tag(args.mode)
@@ -211,7 +254,7 @@ class GenerateTree:
                     pull = self.repo.get_pull(pr_number)
                 else:
                     if args.verbose:
-                        print(f"commit has no associated PR {commit.sha}: \"{m}\"")
+                        print(f"info: commit has no associated PR {commit.sha}: \"{m}\"")
                     self.other_commits.append((commit.sha, m))
                     continue
 
@@ -224,12 +267,33 @@ class GenerateTree:
                 "labels": labels
             }
 
-    def get_common_by_tag(self, start) -> str:
-        tree = self.repo.compare(self.end, selected_tag.commit.sha)
-        selected_commit = tree.merge_base_commit.sha
+    def get_common_ancestor(self) -> str:
+        print("info: will look for the common ancestor by local git repo")
+        cmd = f'''
+        repo_path=/tmp/$(uuid)
+        (
+            mkdir -p "$repo_path"
+            if [[ ! -d $repo_path || ! -z "$(ls -A $repo_path)" ]]; then
+                exit 1
+            fi
+            pushd "$repo_path"
+            git clone https://github.com/{self.name} .
+            git checkout origin/{self.previous_branch} -b {self.previous_branch}
+            common_ancestor=$( \
+                diff -u <(git rev-list --first-parent "develop") \
+                <(git rev-list --first-parent "HEAD") \
+                | sed -ne "s/^ //p" | head -1 \
+            )
+            echo "$common_ancestor" > "$repo_path/output_file"
+            popd
+        ) > /dev/null 2>&1
+        cat "$repo_path/output_file"
+        rm -rf "$repo_path"
+        '''
+        common_ancestor = subprocess.check_output(f"echo '{cmd}' | /bin/bash", shell=True, text=True).rstrip()
         if self.args.verbose:
-            print(f"got the merge base commit: {selected_commit}")
-        return selected_commit
+            print("info: found common ancestor: " + common_ancestor)
+        return common_ancestor
 
     def get_common_by_tag(self, mode) -> str:
         tags = []
@@ -247,24 +311,36 @@ class GenerateTree:
 
         if len(tags) < 2:
             return None
-        selected_tag = tags[1]
+
+        selected_tag = None
+        if self.major_version_match(tags[0].name, self.tag):
+            selected_tag = tags[1]
+        else:
+            selected_tag = tags[0]
 
         if self.args.verbose:
-            print(f"selected start tag {selected_tag.name}: {selected_tag.commit.sha}")
+            print(f"info: selected start tag {selected_tag.name}: {selected_tag.commit.sha}")
 
-        start_version = re.search(r"(\d)+.", selected_tag.name)
-        tag_version = re.search(r"(\d)+.", self.tag)
-        if start_version and tag_version and start_version.group(0) == tag_version.group(0):
+        return self.select_start_ref(selected_tag.name)
+
+    @staticmethod
+    def major_version_match(first_tag: str, second_tag: str) -> bool:
+        major_version_tag_pattern = r"(\d)+."
+        first_tag_major = re.search(major_version_tag_pattern, first_tag)
+        second_tag_major = re.search(major_version_tag_pattern, second_tag)
+        if first_tag_major and second_tag_major and first_tag_major.group(0) == second_tag_major.group(0):
+            return True
+        return False
+
+    def select_start_ref(self, start_tag: str) -> str:
+        if self.major_version_match(start_tag, self.tag):
+            start_commit = self.repo.get_commit(start_tag).sha
             if self.args.verbose:
-                print(f"selected start commit {selected_tag.commit.sha} ({selected_tag.name}) "
+                print(f"info: selected start tag {start_tag} (commit: {start_commit}) "
                       f"has the same major version of the end tag ({self.tag})")
-            return selected_tag.commit.sha
+            return start_commit
 
-        tree = self.repo.compare(self.end, selected_tag.commit.sha)
-        selected_commit = tree.merge_base_commit.sha
-        if self.args.verbose:
-            print(f"got the merge base commit: {selected_commit}")
-        return selected_commit
+        return self.get_common_ancestor()
 
 
 class GenerateMarkdown:
