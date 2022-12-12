@@ -3,23 +3,12 @@ on:
   schedule:
     - cron: "*/10 * * * *"
 #    - cron: "0 0 * * 3,6"
-  workflow_dispatch:
-    inputs:
-      repo:
-        description: "repo"
-        default: "nanocurrency/nano-node"
-        required: true
-      ref:
-        description: "tag to build"
-        default: "releases/vXX"
-        required: true
 env:
   BETA: 1
   artifact: 1
 
 jobs:
   build_auto_setup_job:
-    if: ${{ github.event.inputs.ref == '' }}
     runs-on: ubuntu-20.04
     outputs:
       build_tag: ${{ steps.tag_gen.outputs.build_tag }}
@@ -54,7 +43,6 @@ jobs:
           git push origin "${TAG}"
 
   osx_job:
-    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.result == 'success' && always() || github.event.inputs.ref != '' && always() }}
     needs: build_auto_setup_job
     runs-on: macOS-11
     timeout-minutes: 90
@@ -83,7 +71,6 @@ jobs:
           AWS_DEFAULT_REGION: us-east-2
 
   linux_job:
-    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.result == 'success' && always() || github.event.inputs.ref != '' && always() }}
     needs: build_auto_setup_job
     runs-on: ubuntu-20.04
     timeout-minutes: 90
@@ -112,7 +99,6 @@ jobs:
           AWS_DEFAULT_REGION: us-east-2
 
   linux_docker_job:
-    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.result == 'success' && always() || github.event.inputs.ref != '' && always() }}
     needs: build_auto_setup_job
     runs-on: ubuntu-20.04
     timeout-minutes: 90
@@ -147,7 +133,6 @@ jobs:
         run: ci/actions/linux/ghcr_push.sh
 
   windows_job:
-    if: ${{ github.event.inputs.ref == '' && needs.build_auto_setup_job.result == 'success' && always() || github.event.inputs.ref != '' && always() }}
     needs: build_auto_setup_job
     runs-on: windows-latest
     timeout-minutes: 90

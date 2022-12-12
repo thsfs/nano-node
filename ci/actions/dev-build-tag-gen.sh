@@ -108,17 +108,17 @@ version_tags=$(git tag | sort -V -r | grep -E "^(V([0-9]+).([0-9]+)(RC[0-9]+)?)$
 last_tag=$(get_first_item "$version_tags")
 tag_version_major=$(echo "$last_tag" | grep -oP "\V([0-9]+)\." | grep -oP "[0-9]+")
 if [[ ${tag_version_major} -ge ${current_version_major} ]]; then
-    echo "This is not the develop branch or your higher tag version is not equivalent to the current major version."
+    echo "error: this is not the develop branch or your higher tag version is not equivalent to the current major version."
     exit 1
 fi
 
 if [[ ${current_version_minor} != "0" ]]; then
-    echo "This is not the develop branch or the version-minor number is not properly set."
+    echo "error: this is not the develop branch or the version-minor number is not properly set."
     exit 1
 fi
 
 if [[ ${current_version_pre_release} != "99" ]]; then
-    echo "This is not the develop branch or the pre-release version is not properly set."
+    echo "error this is not the develop branch or the pre-release version is not properly set."
     exit 1
 fi
 
@@ -143,8 +143,8 @@ popd
 
 build_tag=""
 if [[ -z "$last_tag" ]]; then
-    echo "No tag found"
     build_number=1
+    echo "info: no tag found, build_number=${build_number}"
     if [[ $previous_release_gen == false ]]; then
         build_tag="V${current_version_major}.${current_version_minor}DB${build_number}"
     else
@@ -166,7 +166,7 @@ tag_head=$(git rev-list "$last_tag" | head -n 1)
 popd
 
 if [[ "$develop_head" == "$tag_head" ]]; then
-    echo "No new commits for the develop build, the develop (or release) branch head matches the latest DB tag head!"
+    echo "error: no new commits for the develop build, the develop (or release) branch head matches the latest DB tag head!"
     exit 2
 fi
 
