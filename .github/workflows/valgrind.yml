@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         COMPILER: [gcc, clang]
-    runs-on: ${{ env.RUNNER }}
+    runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
     outputs:
       ref: ${{ steps.set_ref.outputs.ref }}
       run_timestamp: ${{ steps.set_run_timestamp.outputs.timestamp }}
@@ -65,7 +65,7 @@ jobs:
       matrix:
         TEST_USE_ROCKSDB: [0, 1]
         COMPILER: [gcc, clang]
-    runs-on: ${{ env.RUNNER }}
+    runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
     outputs:
       ref: ${{ steps.set_ref.outputs.ref }}
     env:
@@ -120,7 +120,7 @@ jobs:
         TEST_USE_ROCKSDB: [0, 1]
         COMPILER: [gcc, clang]
         TEST_TO_RUN: [core_test, rpc_test]
-    runs-on: ${{ env.RUNNER }}
+    runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
     outputs:
       issue_reported: ${{ steps.test_run.outputs.issue_reported }}
     env:
@@ -190,7 +190,7 @@ jobs:
       fail-fast: false
       matrix:
         COMPILER: [gcc, clang]
-    runs-on: ${{ env.RUNNER }}
+    runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
     env:
       COMPILER: ${{ matrix.COMPILER }}
       RUN_TIMESTAMP_SUFFIX: ${{ env.RUNNER == 'self-hosted' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
