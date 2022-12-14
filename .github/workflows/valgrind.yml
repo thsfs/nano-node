@@ -18,7 +18,7 @@ jobs:
       matrix:
         TEST_USE_ROCKSDB: [0, 1]
         COMPILER: [gcc, clang]
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     outputs:
       ref: ${{ steps.set_ref.outputs.ref }}
     env:
@@ -26,6 +26,9 @@ jobs:
       TEST_USE_ROCKSDB: ${{ matrix.TEST_USE_ROCKSDB }}
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
+      - name: Clean workspace (required when running self-hosted)
+        run: |
+          sudo rm -rf ${{ github.workspace }}/*
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3.1.0
         with:
           submodules: "true"
@@ -61,10 +64,13 @@ jobs:
         TEST_USE_ROCKSDB: [0, 1]
         COMPILER: [gcc, clang]
         TEST_TO_RUN: [core_test, rpc_test]
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     outputs:
       issue_reported: ${{ steps.test_run.outputs.issue_reported }}
     steps:
+      - name: Clean workspace (required when running self-hosted)
+        run: |
+          sudo rm -rf ${{ github.workspace }}/*
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3.1.0
         with:
           submodules: "true"
