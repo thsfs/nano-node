@@ -70,7 +70,7 @@ jobs:
     env:
       COMPILER: ${{ matrix.COMPILER }}
       TEST_USE_ROCKSDB: ${{ matrix.TEST_USE_ROCKSDB }}
-      RUN_TIMESTAMP_SUFFIX: ${{ github.event.inputs.runner_type != 'git-hub' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
+      RUN_TIMESTAMP_SUFFIX: ${{ (github.event.inputs.runner_type != 'git-hub' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp)) || '' }}
     steps:
       - name: Clean workspace (required when running self-hosted)
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
@@ -125,7 +125,7 @@ jobs:
     env:
       COMPILER: ${{ matrix.COMPILER }}
       TEST_USE_ROCKSDB: ${{ matrix.TEST_USE_ROCKSDB }}
-      RUN_TIMESTAMP_SUFFIX: ${{ github.event.inputs.runner_type != 'git-hub' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
+      RUN_TIMESTAMP_SUFFIX: ${{ (github.event.inputs.runner_type != 'git-hub' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp)) || '' }}
     steps:
       - name: Clean workspace (required when running self-hosted)
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
@@ -192,7 +192,7 @@ jobs:
     runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
     env:
       COMPILER: ${{ matrix.COMPILER }}
-      RUN_TIMESTAMP_SUFFIX: ${{ github.event.inputs.runner_type != 'git-hub' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
+      RUN_TIMESTAMP_SUFFIX: ${{ (github.event.inputs.runner_type != 'git-hub' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp)) || '' }}
     steps:
       - name: Clean workspace (required when running self-hosted)
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
