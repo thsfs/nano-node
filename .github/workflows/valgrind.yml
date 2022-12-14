@@ -8,7 +8,7 @@ on:
 
 env:
   RELEASE: 0
-  RUNS_ON: self-hosted
+  RUNS_ON: 'self-hosted'
   artifact: 0
 
 jobs:
