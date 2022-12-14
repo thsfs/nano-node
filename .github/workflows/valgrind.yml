@@ -57,8 +57,10 @@ jobs:
             ci/custom-timeout.sh 30 docker build REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-${COMPILER} -t "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
           )
 
-  debug_enabled_build:
+  test_build:
     name: Test Build / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
+    needs: local_docker_build
+    if: ${{ github.event.inputs.runner_type != 'git-hub' && needs.local_docker_build.result == 'success' && always() || github.event.inputs.runner_type == 'git-hub' && always() }}
     strategy:
       fail-fast: false
       matrix:
@@ -112,7 +114,7 @@ jobs:
 
   valgrind_run:
     name: ${{ matrix.TEST_TO_RUN }} / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
-    needs: debug_enabled_build
+    needs: test_build
     strategy:
       fail-fast: false
       matrix:
