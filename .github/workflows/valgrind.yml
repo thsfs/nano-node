@@ -67,6 +67,9 @@ jobs:
     runs-on: self-hosted
     outputs:
       issue_reported: ${{ steps.test_run.outputs.issue_reported }}
+    env:
+      COMPILER: ${{ matrix.COMPILER }}
+      TEST_USE_ROCKSDB: ${{ matrix.TEST_USE_ROCKSDB }}
     steps:
       - name: Clean workspace (required when running self-hosted)
         run: |
