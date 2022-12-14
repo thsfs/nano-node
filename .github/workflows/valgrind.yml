@@ -8,23 +8,23 @@ on:
 
 env:
   RELEASE: 0
+  RUNS_ON: "self-hosted"
   artifact: 0
 
-jobs:  
-  debug_enabled_build:
-    name: Build / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
+jobs:
+  local_docker_build:
+    name: Docker Build / ${{ matrix.COMPILER }}
+    if: ${{ env.RUNS_ON == 'self-hosted' }}
     strategy:
       fail-fast: false
       matrix:
-        TEST_USE_ROCKSDB: [0, 1]
         COMPILER: [gcc, clang]
-    runs-on: self-hosted
+    runs-on: ${{ env.RUNS_ON }}
     outputs:
       ref: ${{ steps.set_ref.outputs.ref }}
+      run_timestamp: ${{ steps.set_run_timestamp.outputs.timestamp }}
     env:
       COMPILER: ${{ matrix.COMPILER }}
-      TEST_USE_ROCKSDB: ${{ matrix.TEST_USE_ROCKSDB }}
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Clean workspace (required when running self-hosted)
         run: |
@@ -35,14 +35,61 @@ jobs:
       - name: Set the Reference Variable
         id: set_ref
         run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: Set Run's Timestamp (required when running self-hosted)
+        id: set_run_timestamp
+        run: |
+          timestamp=$(date +%s)
+          echo "timestamp=${timestamp}" >> $GITHUB_OUTPUT
+      - name: Local Docker Build (required when running self-hosted)
+        run: |
+          (
+            set -x
+            RUN_TIMESTAMP_SUFFIX="-run-${{ steps.set_run_timestamp.outputs.timestamp }}"
+            ci/custom-timeout.sh 30 docker build REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-base -t "nanocurrency/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
+            ci/custom-timeout.sh 30 docker build REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-${COMPILER} -t "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+          )
+
+  debug_enabled_build:
+    name: Test Build / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
+    strategy:
+      fail-fast: false
+      matrix:
+        TEST_USE_ROCKSDB: [0, 1]
+        COMPILER: [gcc, clang]
+    runs-on: ${{ env.RUNS_ON }}
+    outputs:
+      ref: ${{ steps.set_ref.outputs.ref }}
+    env:
+      COMPILER: ${{ matrix.COMPILER }}
+      TEST_USE_ROCKSDB: ${{ matrix.TEST_USE_ROCKSDB }}
+      RUN_TIMESTAMP_SUFFIX: ${{ env.RUNS_ON == 'self-hosted' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
+    steps:
+      - name: Clean workspace (required when running self-hosted)
+        if: ${{ env.RUNS_ON == 'self-hosted' }}
+        run: |
+          sudo rm -rf ${{ github.workspace }}/*
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3.1.0
+        with:
+          submodules: "true"
+      - name: Set the Reference Variable
+        id: set_ref
+        run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Git Submodule Update
         run: git submodule update --init --recursive
+      - name: Local Docker Pull (required when running self-hosted)
+        if: ${{ env.RUNS_ON == 'self-hosted' }}
+        run: |
+          (
+            set -x
+            ci/custom-timeout 20 docker pull "nanocurrency/nano-env:${COMPILER}${{ RUN_TIMESTAMP_SUFFIX }}"
+          )
       - name: Install Dependencies
+        if: ${{ env.RUNS_ON != 'self-hosted' }}
         run: ci/actions/linux/install_deps.sh
       - name: Build Tests
         id: build_tests
         run: |
-          docker run -e TEST_USE_ROCKSDB -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
+          docker run --rm -e TEST_USE_ROCKSDB -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }}${{ RUN_TIMESTAMP_SUFFIX }} /bin/bash -c \
             "cd /workspace && RELEASE=true ./ci/build-ci.sh /usr/lib/x86_64-linux-gnu/cmake/Qt5 'core_test rpc_test'"
           sudo chown -R "$(id -u):$(id -g)" ${PWD}/build
       - name: Upload the Test Artifacts
@@ -64,14 +111,16 @@ jobs:
         TEST_USE_ROCKSDB: [0, 1]
         COMPILER: [gcc, clang]
         TEST_TO_RUN: [core_test, rpc_test]
-    runs-on: self-hosted
+    runs-on: ${{ env.RUNS_ON }}
     outputs:
       issue_reported: ${{ steps.test_run.outputs.issue_reported }}
     env:
       COMPILER: ${{ matrix.COMPILER }}
       TEST_USE_ROCKSDB: ${{ matrix.TEST_USE_ROCKSDB }}
+      RUN_TIMESTAMP_SUFFIX: ${{ env.RUNS_ON == 'self-hosted' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
     steps:
       - name: Clean workspace (required when running self-hosted)
+        if: ${{ env.RUNS_ON == 'self-hosted' }}
         run: |
           sudo rm -rf ${{ github.workspace }}/*
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3.1.0
@@ -80,7 +129,15 @@ jobs:
       - name: Set the Reference Variable
         id: set_ref
         run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: Local Docker Pull (required when running self-hosted)
+        if: ${{ env.RUNS_ON == 'self-hosted' }}
+        run: |
+          (
+            set -x
+            ci/custom-timeout 20 docker pull "nanocurrency/nano-env:${COMPILER}${{ RUN_TIMESTAMP_SUFFIX }}"
+          )
       - name: Install Dependencies
+        if: ${{ env.RUNS_ON != 'self-hosted' }}
         run: ci/actions/linux/install_deps.sh
       - name: Download the Test Artifacts
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
@@ -91,7 +148,7 @@ jobs:
         continue-on-error: true
         run: |
           sudo chmod +x ${PWD}/build/${{ matrix.TEST_TO_RUN }}
-          docker run -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }} /bin/bash -c \
+          docker run --rm -v ${PWD}:/workspace nanocurrency/nano-env:${{ matrix.COMPILER }}${{ RUN_TIMESTAMP_SUFFIX }} /bin/bash -c \
             "cd /workspace/build && valgrind --leak-check=full --track-origins=yes --suppressions=../valgrind.supp --error-exitcode=1 --log-file=${{ matrix.TEST_TO_RUN }}_report ./${{ matrix.TEST_TO_RUN }}"
           echo "issue_reported=$?" >> $GITHUB_OUTPUT
           sudo chown -R "$(id -u):$(id -g)" ${PWD}/build
@@ -115,3 +172,25 @@ jobs:
           path: |
             ${{ github.workspace }}/build/${{ matrix.TEST_TO_RUN }}_report
           retention-days: 30
+
+  docker_cleanup:
+    name: ${{ matrix.TEST_TO_RUN }} / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
+    needs: valgrind_run
+    if: ${{ env.RUNS_ON == 'self-hosted' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        COMPILER: [gcc, clang]
+    runs-on: ${{ env.RUNS_ON }}
+    env:
+      COMPILER: ${{ matrix.COMPILER }}
+      RUN_TIMESTAMP_SUFFIX: ${{ env.RUNS_ON == 'self-hosted' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
+    steps:
+      - name: Clean workspace (required when running self-hosted)
+        if: ${{ env.RUNS_ON == 'self-hosted' }}
+        run: |
+          sudo rm -rf ${{ github.workspace }}/*
+      - name: Clean docker images
+        run: |
+          docker rmi nanocurrency/nano-env:base${{ RUN_TIMESTAMP_SUFFIX }}
+          docker rmi nanocurrency/nano-env:${{ matrix.COMPILER }}${{ RUN_TIMESTAMP_SUFFIX }}
