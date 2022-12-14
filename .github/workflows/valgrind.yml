@@ -5,21 +5,30 @@ on:
     tags:
       - V*
   workflow_dispatch:
+    inputs:
+      runner_type:
+        type: choice
+        options:
+        - self-hosted
+        - git-hub
+        description: "Linux Runner"
+        default: self-hosted
+        required: true
 
 env:
   RELEASE: 0
-  RUNS_ON: 'self-hosted'
+  RUNNER: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
   artifact: 0
 
 jobs:
   local_docker_build:
     name: Docker Build / ${{ matrix.COMPILER }}
-    if: ${{ env.RUNS_ON == 'self-hosted' }}
+    if: ${{ env.RUNNER == 'self-hosted' }}
     strategy:
       fail-fast: false
       matrix:
         COMPILER: [gcc, clang]
-    runs-on: ${{ env.RUNS_ON }}
+    runs-on: ${{ env.RUNNER }}
     outputs:
       ref: ${{ steps.set_ref.outputs.ref }}
       run_timestamp: ${{ steps.set_run_timestamp.outputs.timestamp }}
@@ -56,16 +65,16 @@ jobs:
       matrix:
         TEST_USE_ROCKSDB: [0, 1]
         COMPILER: [gcc, clang]
-    runs-on: ${{ env.RUNS_ON }}
+    runs-on: ${{ env.RUNNER }}
     outputs:
       ref: ${{ steps.set_ref.outputs.ref }}
     env:
       COMPILER: ${{ matrix.COMPILER }}
       TEST_USE_ROCKSDB: ${{ matrix.TEST_USE_ROCKSDB }}
-      RUN_TIMESTAMP_SUFFIX: ${{ env.RUNS_ON == 'self-hosted' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
+      RUN_TIMESTAMP_SUFFIX: ${{ env.RUNNER == 'self-hosted' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
     steps:
       - name: Clean workspace (required when running self-hosted)
-        if: ${{ env.RUNS_ON == 'self-hosted' }}
+        if: ${{ env.RUNNER == 'self-hosted' }}
         run: |
           sudo rm -rf ${{ github.workspace }}/*
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3.1.0
@@ -77,14 +86,14 @@ jobs:
       - name: Git Submodule Update
         run: git submodule update --init --recursive
       - name: Local Docker Pull (required when running self-hosted)
-        if: ${{ env.RUNS_ON == 'self-hosted' }}
+        if: ${{ env.RUNNER == 'self-hosted' }}
         run: |
           (
             set -x
             ci/custom-timeout 20 docker pull "nanocurrency/nano-env:${COMPILER}${{ RUN_TIMESTAMP_SUFFIX }}"
           )
       - name: Install Dependencies
-        if: ${{ env.RUNS_ON != 'self-hosted' }}
+        if: ${{ env.RUNNER != 'self-hosted' }}
         run: ci/actions/linux/install_deps.sh
       - name: Build Tests
         id: build_tests
@@ -111,16 +120,16 @@ jobs:
         TEST_USE_ROCKSDB: [0, 1]
         COMPILER: [gcc, clang]
         TEST_TO_RUN: [core_test, rpc_test]
-    runs-on: ${{ env.RUNS_ON }}
+    runs-on: ${{ env.RUNNER }}
     outputs:
       issue_reported: ${{ steps.test_run.outputs.issue_reported }}
     env:
       COMPILER: ${{ matrix.COMPILER }}
       TEST_USE_ROCKSDB: ${{ matrix.TEST_USE_ROCKSDB }}
-      RUN_TIMESTAMP_SUFFIX: ${{ env.RUNS_ON == 'self-hosted' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
+      RUN_TIMESTAMP_SUFFIX: ${{ env.RUNNER == 'self-hosted' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
     steps:
       - name: Clean workspace (required when running self-hosted)
-        if: ${{ env.RUNS_ON == 'self-hosted' }}
+        if: ${{ env.RUNNER == 'self-hosted' }}
         run: |
           sudo rm -rf ${{ github.workspace }}/*
       - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3.1.0
@@ -130,14 +139,14 @@ jobs:
         id: set_ref
         run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Local Docker Pull (required when running self-hosted)
-        if: ${{ env.RUNS_ON == 'self-hosted' }}
+        if: ${{ env.RUNNER == 'self-hosted' }}
         run: |
           (
             set -x
             ci/custom-timeout 20 docker pull "nanocurrency/nano-env:${COMPILER}${{ RUN_TIMESTAMP_SUFFIX }}"
           )
       - name: Install Dependencies
-        if: ${{ env.RUNS_ON != 'self-hosted' }}
+        if: ${{ env.RUNNER != 'self-hosted' }}
         run: ci/actions/linux/install_deps.sh
       - name: Download the Test Artifacts
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
@@ -176,18 +185,18 @@ jobs:
   docker_cleanup:
     name: ${{ matrix.TEST_TO_RUN }} / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
     needs: valgrind_run
-    if: ${{ env.RUNS_ON == 'self-hosted' }}
+    if: ${{ env.RUNNER == 'self-hosted' }}
     strategy:
       fail-fast: false
       matrix:
         COMPILER: [gcc, clang]
-    runs-on: ${{ env.RUNS_ON }}
+    runs-on: ${{ env.RUNNER }}
     env:
       COMPILER: ${{ matrix.COMPILER }}
-      RUN_TIMESTAMP_SUFFIX: ${{ env.RUNS_ON == 'self-hosted' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
+      RUN_TIMESTAMP_SUFFIX: ${{ env.RUNNER == 'self-hosted' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp) || '' }}
     steps:
       - name: Clean workspace (required when running self-hosted)
-        if: ${{ env.RUNS_ON == 'self-hosted' }}
+        if: ${{ env.RUNNER == 'self-hosted' }}
         run: |
           sudo rm -rf ${{ github.workspace }}/*
       - name: Clean docker images
