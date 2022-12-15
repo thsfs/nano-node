@@ -83,10 +83,10 @@ jobs:
             local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
             docker rmi ${image_id} --force
           }
-          remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
+          remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
           compilers="gcc clang"
           for COMPILER in $compilers; do
-            remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+            remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
           done
 
   test_build:
@@ -155,10 +155,10 @@ jobs:
             local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
             docker rmi ${image_id} --force
           }
-          remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
+          remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
           compilers="gcc clang"
           for COMPILER in $compilers; do
-            remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+            remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
           done
 
   valgrind_run:
@@ -244,10 +244,10 @@ jobs:
             local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
             docker rmi ${image_id} --force
           }
-          remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
+          remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
           compilers="gcc clang"
           for COMPILER in $compilers; do
-            remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+            remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
           done
 
   docker_ghcr_cleanup:
