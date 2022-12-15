@@ -49,14 +49,17 @@ jobs:
           (
             set -x
             RUN_TIMESTAMP_SUFFIX="-run-${{ steps.set_run_timestamp.outputs.timestamp }}"
+            ci/custom-timeout.sh 20 docker pull "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base" || true
             ci/custom-timeout.sh 30 docker build "$@" --build-arg REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-base \
-              -t "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base${RUN_TIMESTAMP_SUFFIX}" --cache-from "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base" .
+              -t "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base${RUN_TIMESTAMP_SUFFIX}" --cache-from "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base" .
             compilers="gcc clang"
             for COMPILER in $compilers; do
-              docker_tag="ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+              docker_tag_timestamp="ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+              docker_tag_cache="ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}"
+              ci/custom-timeout.sh 20 docker pull "$docker_tag_cache" || true
               ci/custom-timeout.sh 30 docker build "$@" --build-arg REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-${COMPILER} \
-                -t "$docker_tag" --cache-from "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}" .
-              docker tag "$docker_tag" "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+                -t "$docker_tag_timestamp" --cache-from "$docker_tag_cache" .
+              docker tag "$docker_tag_timestamp" "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
             done
           )
 
@@ -94,7 +97,7 @@ jobs:
         run: |
           (
             set -x
-            ci/custom-timeout.sh 20 docker pull "ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+            ci/custom-timeout.sh 20 docker pull "ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}" || true
           )
       - name: Install Dependencies
         if: ${{ github.event.inputs.runner_type == 'git-hub' }}
@@ -147,7 +150,7 @@ jobs:
         run: |
           (
             set -x
-            ci/custom-timeout.sh 20 docker pull "ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+            ci/custom-timeout.sh 20 docker pull "ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}" || true
           )
       - name: Install Dependencies
         if: ${{ github.event.inputs.runner_type == 'git-hub' }}
