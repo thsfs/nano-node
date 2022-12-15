@@ -21,18 +21,14 @@ env:
 
 jobs:
   local_docker_build:
-    name: Docker Build / ${{ matrix.COMPILER }}
+    name: Docker Build
     if: ${{ github.event.inputs.runner_type != 'git-hub' }}
     strategy:
       fail-fast: false
-      matrix:
-        COMPILER: [gcc, clang]
     runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
     outputs:
       ref: ${{ steps.set_ref.outputs.ref }}
       run_timestamp: ${{ steps.set_run_timestamp.outputs.timestamp }}
-    env:
-      COMPILER: ${{ matrix.COMPILER }}
     steps:
       - name: Clean workspace (required when running self-hosted)
         run: |
@@ -53,8 +49,13 @@ jobs:
           (
             set -x
             RUN_TIMESTAMP_SUFFIX="-run-${{ steps.set_run_timestamp.outputs.timestamp }}"
-            ci/custom-timeout.sh 30 docker build REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-base -t "nanocurrency/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
-            ci/custom-timeout.sh 30 docker build REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-${COMPILER} -t "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+            ci/custom-timeout.sh 30 docker build "$@" --build-arg REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-base \
+              -t "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base${RUN_TIMESTAMP_SUFFIX}" --cache-from "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base" .
+            compilers="gcc clang"
+            for COMPILER in $compilers; do
+              ci/custom-timeout.sh 30 docker build "$@" --build-arg REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-${COMPILER} \
+                -t "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}" --cache-from "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}" .
+            done
           )
 
   test_build:
