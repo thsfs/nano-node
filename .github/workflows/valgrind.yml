@@ -103,6 +103,7 @@ jobs:
         run: |
           (
             set -x
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             ci/custom-timeout.sh 20 docker pull "ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}" || true
           )
       - name: Install Dependencies
@@ -156,6 +157,7 @@ jobs:
         run: |
           (
             set -x
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             ci/custom-timeout.sh 20 docker pull "ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}" || true
           )
       - name: Install Dependencies
@@ -209,7 +211,7 @@ jobs:
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
         run: |
           sudo rm -rf ${{ github.workspace }}/*
-      - name: Clean docker images
+      - name: Clean docker local images
         run: |
           (
             function remove_docker_image {
@@ -223,3 +225,28 @@ jobs:
               remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
             done
           )
+      - name: Clean GH containers (remote copies)
+        uses: actions/github-script@d556feaca394842dc55e4734bf3bb9f685482fa0 #v6.3.3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const response = await github.request("GET /${{ github.repository_owner }}/packages/container/nano-env/versions", { per_page: 10 });
+            const { run_timestamp_suffix } = process.env
+            const compilers = ['clang', 'gcc']
+            function compareTag(tag) {
+                match = false
+                for(compiler of compilers) {
+                    timestamp_tag = compiler + run_timestamp_suffix
+                    match |= (tag == timestamp_tag)
+                }
+                timestamp_tag = 'base' + run_timestamp_suffix
+                match |= (tag == timestamp_tag)
+                return match
+            }
+            for(version of response.data) {
+                if (compareTag(version.metadata.container.tags[0])) {
+                    console.log("delete " + version.id)
+                    const deleteResponse = await github.request("DELETE /${{ github.repository_owner }}/packages/container/nano-env/versions/" + version.id, { });
+                    console.log("status " + deleteResponse.status)
+                }
+            }
