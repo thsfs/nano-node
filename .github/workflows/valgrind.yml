@@ -48,10 +48,15 @@ jobs:
         run: |
           (
             set -x
+            # variables setup
             RUN_TIMESTAMP_SUFFIX="-run-${{ steps.set_run_timestamp.outputs.timestamp }}"
-            ci/custom-timeout.sh 20 docker pull "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base" || true
-            ci/custom-timeout.sh 30 docker build "$@" --build-arg REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-base \
-              -t "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base${RUN_TIMESTAMP_SUFFIX}" --cache-from "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base" .
+            docker_tag_timestamp="ghcr.io/${GITHUB_REPOSITORY}/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
+            docker_tag_cache="ghcr.io/${GITHUB_REPOSITORY}/nano-env:base"
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            ci/custom-timeout.sh 20 docker pull "$docker_tag_cache" || true
+            ci/custom-timeout.sh 30 docker build "$@" --build-arg REPOSITORY=${GITHUB_REPOSITORY} \
+              -f docker/ci/Dockerfile-base -t "$docker_tag_timestamp" --cache-from "$docker_tag_cache" .
+            ci/custom-timeout.sh 30 docker push "$docker_tag_timestamp"
             compilers="gcc clang"
             for COMPILER in $compilers; do
               docker_tag_timestamp="ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
@@ -59,6 +64,7 @@ jobs:
               ci/custom-timeout.sh 20 docker pull "$docker_tag_cache" || true
               ci/custom-timeout.sh 30 docker build "$@" --build-arg REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-${COMPILER} \
                 -t "$docker_tag_timestamp" --cache-from "$docker_tag_cache" .
+              ci/custom-timeout.sh 30 docker push "$docker_tag_timestamp"
               docker tag "$docker_tag_timestamp" "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
             done
           )
@@ -120,7 +126,7 @@ jobs:
 
   valgrind_run:
     name: ${{ matrix.TEST_TO_RUN }} / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
-    needs: test_build
+    needs: test_build, local_docker_build
     strategy:
       fail-fast: false
       matrix:
@@ -191,7 +197,7 @@ jobs:
 
   docker_cleanup:
     name: Docker Cleanups
-    needs: valgrind_run
+    needs: valgrind_run, local_docker_build
     if: ${{ github.event.inputs.runner_type != 'git-hub' }}
     strategy:
       fail-fast: false
