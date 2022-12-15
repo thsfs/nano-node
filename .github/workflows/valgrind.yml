@@ -126,7 +126,7 @@ jobs:
 
   valgrind_run:
     name: ${{ matrix.TEST_TO_RUN }} / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
-    needs: test_build, local_docker_build
+    needs: [test_build, local_docker_build]
     strategy:
       fail-fast: false
       matrix:
@@ -197,7 +197,7 @@ jobs:
 
   docker_cleanup:
     name: Docker Cleanups
-    needs: valgrind_run, local_docker_build
+    needs: [valgrind_run, local_docker_build]
     if: ${{ github.event.inputs.runner_type != 'git-hub' }}
     strategy:
       fail-fast: false
