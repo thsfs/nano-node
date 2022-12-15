@@ -21,7 +21,7 @@ env:
 
 jobs:
   local_docker_build:
-    name: Docker Build
+    name: Docker Builds
     if: ${{ github.event.inputs.runner_type != 'git-hub' }}
     strategy:
       fail-fast: false
@@ -53,8 +53,10 @@ jobs:
               -t "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base${RUN_TIMESTAMP_SUFFIX}" --cache-from "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base" .
             compilers="gcc clang"
             for COMPILER in $compilers; do
+              docker_tag="ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
               ci/custom-timeout.sh 30 docker build "$@" --build-arg REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-${COMPILER} \
-                -t "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}" --cache-from "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}" .
+                -t "$docker_tag" --cache-from "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}" .
+              docker tag "$docker_tag" "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
             done
           )
 
@@ -92,7 +94,7 @@ jobs:
         run: |
           (
             set -x
-            ci/custom-timeout 20 docker pull "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+            ci/custom-timeout.sh 20 docker pull "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
           )
       - name: Install Dependencies
         if: ${{ github.event.inputs.runner_type == 'git-hub' }}
@@ -185,16 +187,13 @@ jobs:
           retention-days: 30
 
   docker_cleanup:
-    name: ${{ matrix.TEST_TO_RUN }} / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
+    name: Docker Cleanups
     needs: valgrind_run
     if: ${{ github.event.inputs.runner_type != 'git-hub' }}
     strategy:
       fail-fast: false
-      matrix:
-        COMPILER: [gcc, clang]
     runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
     env:
-      COMPILER: ${{ matrix.COMPILER }}
       RUN_TIMESTAMP_SUFFIX: ${{ (github.event.inputs.runner_type != 'git-hub' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp)) || '' }}
     steps:
       - name: Clean workspace (required when running self-hosted)
@@ -203,5 +202,15 @@ jobs:
           sudo rm -rf ${{ github.workspace }}/*
       - name: Clean docker images
         run: |
-          docker rmi nanocurrency/nano-env:base${RUN_TIMESTAMP_SUFFIX}
-          docker rmi nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}
+          (
+            function remove_docker_image {
+              local image_name=${1}
+              local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
+              docker rmi ${image_id} --force
+            }
+            remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base${RUN_TIMESTAMP_SUFFIX}
+            compilers="gcc clang"
+            for COMPILER in $compilers; do
+              remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+            done
+          )
