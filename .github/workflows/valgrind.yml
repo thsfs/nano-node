@@ -78,6 +78,7 @@ jobs:
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
         run: |
           (
+            set -x
             function remove_docker_image {
               local image_name=${1}
               local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
@@ -158,6 +159,7 @@ jobs:
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
         run: |
           (
+            set -x
             function remove_docker_image {
               local image_name=${1}
               local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
@@ -234,6 +236,7 @@ jobs:
         id: show_report
         run: |
           (
+            set -x
             report_file="build/${{ matrix.TEST_TO_RUN }}_report"
             if [[ -f "${report_file}" ]]; then
               echo "Report Output:"
@@ -254,6 +257,7 @@ jobs:
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
         run: |
           (
+            set -x
             function remove_docker_image {
               local image_name=${1}
               local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
