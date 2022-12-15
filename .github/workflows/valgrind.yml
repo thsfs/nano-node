@@ -147,7 +147,7 @@ jobs:
         run: |
           (
             set -x
-            ci/custom-timeout 20 docker pull "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+            ci/custom-timeout.sh 20 docker pull "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
           )
       - name: Install Dependencies
         if: ${{ github.event.inputs.runner_type == 'git-hub' }}
