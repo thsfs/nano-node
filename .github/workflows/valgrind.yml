@@ -44,6 +44,13 @@ jobs:
         run: |
           timestamp=$(date +%s)
           echo "timestamp=${timestamp}" >> $GITHUB_OUTPUT
+      - name: Login to ghcr.io (required when running self-hosted)
+        if: ${{ github.event.inputs.runner_type != 'git-hub' }}
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a #v2.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Local Docker Build (required when running self-hosted)
         run: |
           (
@@ -52,7 +59,7 @@ jobs:
             RUN_TIMESTAMP_SUFFIX="-run-${{ steps.set_run_timestamp.outputs.timestamp }}"
             docker_tag_timestamp="ghcr.io/${GITHUB_REPOSITORY}/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
             docker_tag_cache="ghcr.io/${GITHUB_REPOSITORY}/nano-env:base"
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            # echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             ci/custom-timeout.sh 20 docker pull "$docker_tag_cache" || true
             ci/custom-timeout.sh 30 docker build "$@" --build-arg REPOSITORY=${GITHUB_REPOSITORY} \
               -f docker/ci/Dockerfile-base -t "$docker_tag_timestamp" --cache-from "$docker_tag_cache" .
@@ -65,6 +72,21 @@ jobs:
               ci/custom-timeout.sh 30 docker build "$@" --build-arg REPOSITORY=${GITHUB_REPOSITORY} -f docker/ci/Dockerfile-${COMPILER} \
                 -t "$docker_tag_timestamp" --cache-from "$docker_tag_cache" .
               ci/custom-timeout.sh 30 docker push "$docker_tag_timestamp"
+            done
+          )
+      - name: Clean docker local images (required when running self-hosted)
+        if: ${{ github.event.inputs.runner_type != 'git-hub' }}
+        run: |
+          (
+            function remove_docker_image {
+              local image_name=${1}
+              local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
+              docker rmi ${image_id} --force
+            }
+            remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base${RUN_TIMESTAMP_SUFFIX}
+            compilers="gcc clang"
+            for COMPILER in $compilers; do
+              remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
             done
           )
 
@@ -97,12 +119,19 @@ jobs:
         run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Git Submodule Update
         run: git submodule update --init --recursive
+      - name: Login to ghcr.io (required when running self-hosted)
+        if: ${{ github.event.inputs.runner_type != 'git-hub' }}
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a #v2.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Local Docker Pull (required when running self-hosted)
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
         run: |
           (
             set -x
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            # echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             docker_tag_timestamp="ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
             ci/custom-timeout.sh 20 docker pull "$docker_tag_timestamp" || true
             docker tag "$docker_tag_timestamp" "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
@@ -125,6 +154,21 @@ jobs:
             ${{ github.workspace }}/build/rpc_test
             ${{ github.workspace }}/valgrind.supp
           retention-days: 2
+      - name: Clean docker local images (required when running self-hosted)
+        if: ${{ github.event.inputs.runner_type != 'git-hub' }}
+        run: |
+          (
+            function remove_docker_image {
+              local image_name=${1}
+              local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
+              docker rmi ${image_id} --force
+            }
+            remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:base${RUN_TIMESTAMP_SUFFIX}
+            compilers="gcc clang"
+            for COMPILER in $compilers; do
+              remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
+            done
+          )
 
   valgrind_run:
     name: ${{ matrix.TEST_TO_RUN }} / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
@@ -153,12 +197,19 @@ jobs:
       - name: Set the Reference Variable
         id: set_ref
         run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: Login to ghcr.io (required when running self-hosted)
+        if: ${{ github.event.inputs.runner_type != 'git-hub' }}
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a #v2.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Local Docker Pull (required when running self-hosted)
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
         run: |
           (
             set -x
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            # echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             docker_tag_timestamp="ghcr.io/${GITHUB_REPOSITORY}/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
             ci/custom-timeout.sh 20 docker pull "$docker_tag_timestamp" || true
             docker tag "$docker_tag_timestamp" "nanocurrency/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
@@ -199,22 +250,8 @@ jobs:
           path: |
             ${{ github.workspace }}/build/${{ matrix.TEST_TO_RUN }}_report
           retention-days: 30
-
-  docker_cleanup:
-    name: Docker Cleanups
-    needs: [valgrind_run, local_docker_build]
-    if: ${{ github.event.inputs.runner_type != 'git-hub' }}
-    strategy:
-      fail-fast: false
-    runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
-    env:
-      RUN_TIMESTAMP_SUFFIX: ${{ (github.event.inputs.runner_type != 'git-hub' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp)) || '' }}
-    steps:
-      - name: Clean workspace (required when running self-hosted)
+      - name: Clean docker local images (required when running self-hosted)
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
-        run: |
-          sudo rm -rf ${{ github.workspace }}/*
-      - name: Clean docker local images
         run: |
           (
             function remove_docker_image {
@@ -228,6 +265,21 @@ jobs:
               remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-node/nano-env:${COMPILER}${RUN_TIMESTAMP_SUFFIX}"
             done
           )
+
+  docker_ghcr_cleanup:
+    name: Docker Cleanups
+    needs: [valgrind_run, local_docker_build]
+    if: ${{ github.event.inputs.runner_type != 'git-hub' }}
+    strategy:
+      fail-fast: false
+    runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
+    env:
+      RUN_TIMESTAMP_SUFFIX: ${{ (github.event.inputs.runner_type != 'git-hub' && format('-run-{0}', needs.local_docker_build.outputs.run_timestamp)) || '' }}
+    steps:
+      - name: Clean workspace (required when running self-hosted)
+        if: ${{ github.event.inputs.runner_type != 'git-hub' }}
+        run: |
+          sudo rm -rf ${{ github.workspace }}/*
       - name: Clean GH containers (remote copies)
         uses: actions/github-script@d556feaca394842dc55e4734bf3bb9f685482fa0 #v6.3.3
         with:
