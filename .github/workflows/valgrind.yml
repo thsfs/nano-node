@@ -80,8 +80,10 @@ jobs:
           set -x
           function remove_docker_image {
             local image_name=${1}
-            local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
-            docker rmi ${image_id} --force
+            local image_id=$(docker image ls "$image_name" -q)
+            if [[ -n "$image_id" ]]; then
+              docker rmi ${image_id} --force
+            fi
           }
           remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
           compilers="gcc clang"
@@ -152,8 +154,10 @@ jobs:
           set -x
           function remove_docker_image {
             local image_name=${1}
-            local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
-            docker rmi ${image_id} --force
+            local image_id=$(docker image ls "$image_name" -q)
+            if [[ -n "$image_id" ]]; then
+              docker rmi ${image_id} --force
+            fi
           }
           remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
           compilers="gcc clang"
@@ -241,8 +245,10 @@ jobs:
           set -x
           function remove_docker_image {
             local image_name=${1}
-            local image_id=$(docker image ls $image_name | awk '{ print $3 }' | tail -1)
-            docker rmi ${image_id} --force
+            local image_id=$(docker image ls "$image_name" -q)
+            if [[ -n "$image_id" ]]; then
+              docker rmi ${image_id} --force
+            fi
           }
           remove_docker_image "ghcr.io/${GITHUB_REPOSITORY}/nano-env:base${RUN_TIMESTAMP_SUFFIX}"
           compilers="gcc clang"
