@@ -120,13 +120,6 @@ jobs:
         run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Git Submodule Update
         run: git submodule update --init --recursive
-      - name: Login to ghcr.io (required when running self-hosted)
-        if: ${{ github.event.inputs.runner_type != 'git-hub' }}
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a #v2.1.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Local Docker Pull (required when running self-hosted)
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
         run: |
@@ -199,13 +192,6 @@ jobs:
       - name: Set the Reference Variable
         id: set_ref
         run: echo "ref=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: Login to ghcr.io (required when running self-hosted)
-        if: ${{ github.event.inputs.runner_type != 'git-hub' }}
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a #v2.1.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Local Docker Pull (required when running self-hosted)
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
         run: |
