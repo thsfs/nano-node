@@ -173,6 +173,7 @@ jobs:
   valgrind_run:
     name: ${{ matrix.TEST_TO_RUN }} / ROCKSDB=${{ matrix.TEST_USE_ROCKSDB }} / ${{ matrix.COMPILER }}
     needs: [test_build, local_docker_build]
+    if: ${{ github.event.inputs.runner_type != 'git-hub' && needs.local_docker_build.result == 'success' && always() || github.event.inputs.runner_type == 'git-hub' && always() }}
     strategy:
       fail-fast: false
       matrix:
