@@ -44,11 +44,11 @@ jobs:
         run: |
           timestamp=$(date +%s)
           echo "timestamp=${timestamp}" >> $GITHUB_OUTPUT
-      - name: Turning on the gpg-agent (required by docker-credential-pass)
-        if: ${{ github.event.inputs.runner_type != 'git-hub' }}
-        run: |
-          gpg-connect-agent /bye
-          pass init 7194D469FE8A2105BF4B822E7B2DD601F690D354
+#      - name: Turning on the gpg-agent (required by docker-credential-pass)
+#        if: ${{ github.event.inputs.runner_type != 'git-hub' }}
+#        run: |
+#          gpg-connect-agent /bye
+#          pass init 7194D469FE8A2105BF4B822E7B2DD601F690D354
       - name: Login to ghcr.io (required when running self-hosted)
         if: ${{ github.event.inputs.runner_type != 'git-hub' }}
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a #v2.1.0
