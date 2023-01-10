@@ -12,14 +12,16 @@ on:
         required: true
       ref_start:
         description: "Start (VX.Y tag)"
-        default: "VX.Y"
+        default: ""
         required: false
       mode:
         description: "Find tag as start"
-        default: "final"
+        type: choice
         options:
-        - final
-        - beta
+          - final
+          - beta
+        default: final
+        required: true
 env:
   artifact: 1
 
