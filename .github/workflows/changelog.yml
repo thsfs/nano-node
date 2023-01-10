@@ -37,35 +37,29 @@ jobs:
           echo "REPO_TO_RUN=${{ github.event.inputs.repo }}" >> $GITHUB_ENV
           echo "MODE=${{ github.event.inputs.mode }}" >> $GITHUB_ENV
       - name: Checks out the required workflow files (workflow repo)
-        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3.1.0
         with:
           ref: ${{ github.ref }}
           repository: ${{ github.repository }}
+      - name: Install Dependencies
+        run: sudo apt-get install -yqq uuid
       - name: Setup Python 3.x
         uses: actions/setup-python@13ae5bb136fac2878aff31522b9efb785519f984 #v4.3.0
         with:
           python-version: '3.x'
       - name: Installs PIP Packages
-        uses: BSFishy/pip-action@8f2d471d809dc20b6ada98c91910b6ae6243f318
-        with:
-          packages: |
-            PyGithub
-            mdutils
+        run: |
+          pip install PyGithub
+          pip install mdutils
       - name: Generating the CHANGELOG file (automatic interval)
         if: ${{ github.event.inputs.ref_start == '' }}
-        uses: actions/setup-python@13ae5bb136fac2878aff31522b9efb785519f984 #v4.3.0
-        with:
-          python-version: '3.x'
         run: python util/changelog.py -v --repo $REPO_TO_RUN -m $MODE -t $TAG -p "${{ secrets.GITHUB_TOKEN }}"
       - name: Generating the CHANGELOG file (selected interval)
         if: ${{ github.event.inputs.ref_start != '' }}
-        uses: actions/setup-python@13ae5bb136fac2878aff31522b9efb785519f984 #v4.3.0
-        with:
-          python-version: '3.x'
         run: python util/changelog.py -v --repo $REPO_TO_RUN --start-tag $REF_START -t $TAG -p "${{ secrets.GITHUB_TOKEN }}"
       - name: Upload the Changelog Artifact
         uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
         with:
-          name: CHANGELOG_${TAG}.md
+          name: CHANGELOG_${{ env.TAG }}.md
           path: |
             ${{ github.workspace }}/CHANGELOG.md
