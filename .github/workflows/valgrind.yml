@@ -9,10 +9,10 @@ on:
       runner_type:
         type: choice
         options:
-        - self-hosted
+        - self-hosted-standard
         - git-hub
         description: "Linux Runner"
-        default: self-hosted
+        default: self-hosted-standard
         required: true
 
 env:
@@ -27,7 +27,7 @@ jobs:
       matrix:
         TEST_USE_ROCKSDB: [0, 1]
         COMPILER: [gcc, clang]
-    runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
+    runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted-standard' }}
     outputs:
       ref: ${{ steps.set_ref.outputs.ref }}
     env:
@@ -69,7 +69,7 @@ jobs:
         TEST_USE_ROCKSDB: [0, 1]
         COMPILER: [gcc, clang]
         TEST_TO_RUN: [core_test, rpc_test]
-    runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted' }}
+    runs-on: ${{ github.event.inputs.runner_type == 'git-hub' && 'ubuntu-20.04' || 'self-hosted-standard' }}
     outputs:
       issue_reported: ${{ steps.test_run.outputs.issue_reported }}
     env:
