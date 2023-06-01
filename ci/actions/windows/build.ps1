@@ -55,6 +55,6 @@ if (${LastExitCode} -ne 0) {
     throw "Failed to build ${env:RUN}"
 }
 
-. "$PSScriptRoot\signing.ps1"
+#. "$PSScriptRoot\signing.ps1"
 
 Pop-Location
